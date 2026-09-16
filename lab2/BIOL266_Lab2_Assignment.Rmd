@@ -1,0 +1,219 @@
+---
+title: "BIOL266_Lab2_Assignment"
+output:
+  pdf_document: default
+  html_document: default
+date: "2026-05-20"
+---
+
+Welcome to RStudio! This document is written in RMarkdown. RStudio comes with
+a tool called **knitr** which generates html or pdf documents from your 
+RMarkdown file. This can be done by clicking the *Knit* button above the 
+code window in RStudio. For your assignments, please submit both the completed
+RMarkdown file and an html or pdf file generated from that file. 
+
+R Code in RMarkdown files is embedded in *chunks* with a particular format. 
+Here is an example showing some basic math operations you can do in R: 
+
+```{r}
+1+3
+3-1
+3*10^2
+10 / pi
+sin(4)
+log(100) #natural log by default
+```
+
+You can run chunks one at a time and test their outputs by pressing the green 
+"play" button to the  right of the chunk in RStudio. Chunks will also be run 
+automatically when you knit your Rmd file. 
+
+Like with bash, R is a full scripting language with tools like variable
+assignment and loops. Some examples: 
+
+```{r}
+a <- 10
+b <- a + 10
+
+for (i in 1:5) { #Loop with five iterations
+  a <- a + 10 #Updating the value assigned to variable a
+  print(a) #This prints the value of a
+  b <- a + 10
+  print(b) #This prints the value of b
+}
+```
+
+Note that variable assignment in R can be done with `<-` rather than `=` 
+(though both work). This actually helps with code clarity because it
+helps distinguish variable assignment from mathematical operations. 
+
+When re-running code, it's often useful to clear stored variables from R's 
+memory so that their values are what you expect them to be. You can
+do this with 
+
+```{r}
+rm(list=ls())
+```
+
+`ls` prints all currently variables, while `rm` removes them. I usually put this
+at the top of my R scripts. 
+
+R is a popular language for data science and statistics, and it has many objects
+designed for storing and manipulating data that you will encounter frequently
+while completing assignments in this class. *Vectors* are collections of data
+of a similar type, typically either numeric (e.g. 17.3), integer (e.g. 4), or
+character (e.g. "Bob"). 
+
+To check the type of your data, you can use a *function*; these are objects
+that take some input, apply a series of operations to it, and return an output.
+Example: 
+
+```{r}
+y <- 10
+class(y)
+```
+
+Pay attention to your data types, as they can cause unexpected behavior. For
+example, sometimes numbers can be encoded as characters by R, which will result
+in errors when you try to apply numerical operations to them. To create a
+numerical vector, we can use the function `c()`:
+
+```{r}
+v <- c(1.2, 2.3, 1.1, 4.5, 6.3)
+```
+
+If you're not sure what a function does, you can check its documentation using
+`help` or `?`:
+
+```{r}
+help(c)
+?c
+```
+
+You can multiply a vector by a scalar, or do element-wise multiplication of
+two vectors of the same length, using
+
+```{r}
+v*5
+v2 <- c(0.3, 5.6, 1.4, 2.8, 3.5)
+v*v2
+```
+
+Specific elements in a vector can be accessed or manipulated using indices
+with square brackets: 
+
+```{r}
+v[2]
+v[2:4]
+v[2] <- 0.3
+```
+
+A variety of built-in functions exist to calculate basic summary statistics
+from vectors: 
+
+```{r}
+max(v)
+min(v)
+sum(v)
+mean(v)
+median(v)
+var(v)
+sd(v)
+```
+
+Another key data structure in R is the *matrix*. Matrices are very common
+in phylogenetics; input datasets for phylogenetic reconstruction are usually
+in the form of a species by trait matrix, and they are also used extensively
+in phylogenetic comparative methods (discussed more later in the course). 
+There are generally two approaches to creating matrices in R. The first is 
+using the function `cbind()` to concatenate existing vectors into columns.
+Example using `v` and another vector of random numbers generated with
+`rnorm`:
+
+```{r}
+v2 <- c(rnorm(5, mean = 2, sd = 5))
+m <- cbind(v, v2)
+dim(m) #Prints dimensions of matrix, rows x columns
+```
+
+You can also use `rbind` to bind by rows instead of columns.You can also create
+a matrix directly using the `matrix()` function, passing a vector and specifying
+the number of rows and columns: 
+
+```{r}
+v3 <- c(rnorm(12, mean = 2, sd = 5))
+m2 <- matrix(v3, nrow = 3, ncol = 4)
+```
+
+You can access subsets of values in a matrix with indexing, using the 
+general format `[rows,columns]`. Some examples:
+
+```{r}
+m2[1,] #First row of df
+m2[,2] #Second column of df
+m2[1:2,] #First and second rows
+m2[,3:4] #Third and fourth columns
+m2[,c(1,3)] #First and third columns
+```
+
+# Working with datasets
+
+A *data frame* is a list of columns that can contain different
+types of data. Most datasets that you will work with in R will be stored
+as data frames, and many tools exist to extract and manipulate information
+from them, both in base R (functions that come with R) and in additional
+toolkits like `tidyverse`. Matrices can be converted into dataframes using
+`as.data.frame()`:
+
+```{r}
+m2_df <- as.data.frame(m2)
+#Add a new column to our dataframe identifying species
+species <- c("species1", "species2", "species3")
+m2_df <- cbind(species, m2_df)
+colnames(m2_df) <- c("Species", "x", "y", "z", "a")
+m2_df
+```
+
+Here, we've created a dataframe where three species have a measured value for
+four different variables, x, y, z, and a. This data frame is in **wide** format;
+each measured variable has its own column, and each row represents all the 
+observations made for each species. Data frames can also be formatted **long**,
+where each row represents a single observation of a single variable, creating
+more rows and fewer columns. Many functions in R will require data to be 
+passed in either wide or long formats, so learning how to change between them
+is helpful. Here, we will work through an example using the R package `tidyr`,
+which is part of `tidyverse`. First, we need to check if `tidyverse` is 
+installed, and install it if not:
+
+```{r}
+#install.packages("tidyverse")
+library(tidyr) #If this throws an error, uncomment the previous line to install
+```
+
+```{r}
+#Example with pivot_longer here
+m2_df_long <- m2_df %>%
+                pivot_longer(!Species, names_to = "trait", values_to = "value")
+m2_df_long
+```
+
+In the above code snippet, we made use of the tidyverse pipe, `%>%`. This 
+passes the object preceding the pipe as the first argument to the function
+after the pipe, and can often be used to write simpler and more readable code. 
+Alternatively, the wide dataframe `m2_df` could have been passed directly
+to the first argument of `pivot_longer()`. We converted the four continuous 
+character values, x, y, z, and a, to a single variable called `trait` with
+four possible states. 
+
+Most data analysis projects in R consist of applying functions implemented in
+various packages to data frames. Base R comes with many functions for basic
+statistical analyses, such as the function `lm()` for linear regression 
+analyses. Often we must search for the best package/function for the job,
+and read its documentation to get an idea of how to run it. 
+
+In next week's lab, you will learn about basic data structures for phylogenetic
+analyses in R, tools for tree visualization, and applying basic manipulations
+to tree data, including pruning, merging, and renaming nodes / tips. For now,
+to receive credit for this week's assignment, knit this Rmarkdown file to
+an html or pdf file, and upload the generated file with all code outputs 
+to the assignment repository created for you in the class GitHub organization. 
