@@ -1,0 +1,192 @@
+---
+title: "BIOL266_Lab3_Assignment.Rmd"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+remove(list=ls())
+```
+
+In this lab, you will learn about the basic data structures used to
+store phylogenetic trees, some basic manipulations of those data
+structures in R, and popular R packages for phylogenetic analyses. 
+
+The common format used to store phylogenetic trees across languages and 
+platforms is called a *Newick string*. In a Newick string, the hierarchical
+structure of phylogenies is represented using a nested set of parentheses, with
+each set of closed parentheses representing a clade. Commas are used to 
+represent individual branches that descend from a single node. For example,
+a phylogeny where species A and B are sister, C is sister to A/B, and D is 
+sister to A/B/C would have the Newick string `(((A,B),C),D);`. A semicolon
+is used to indicate the end of the string. 
+
+Consider the following three Newick strings: 
+
+```
+(D,(C,(A,B)));
+(((A,B),C),D);
+(((B,A),C),D);
+```
+Do these strings represent the same or different topologies? Review material
+from lecture 2 if necessary. Explain your reasoning in the box below:
+
+```
+
+```
+
+Now consider the string `((A,B),C,D);`. What makes this string different
+from the previous three? Explain below: 
+
+```
+
+```
+
+In Newick format, the length of the branch descending from each node
+is indicated by a semicolon `:` followed by a numerical float indicating the
+length value. For tip branches, the semicolon is placed after the taxon name
+for the branch; for internal branches, it is placed after the close parenthesis
+indicating the clade the internal branch leads to. For example, the length of
+the internal branch leading to the ancestor of `A` and `B` would be written
+as `(A,B):0.01`, and the length of the tip branch leading to species C would
+be written simply as `C:0.01`. Consider the following two strings:
+
+```
+(D:3,(C:2,(A:1,B:1):1):2);
+(D:0.025,(C:0.01,(A:0.003,B:0.004):0.005):0.008);
+```
+Recall the difference between a chronogram and a phylogram as explained in
+lecture 2. Which would you say best describes each of these trees? Explain
+your reasoning below:
+
+```
+
+```
+
+Consider a phylogeny where X is sister to Y, Z is sister to W, the XY clade
+is sister to the ZW clade, and O is sister to the clade containing X, Y, Z, 
+and W. Write this phylogeny in Newick format in the space below: 
+
+```
+
+```
+
+To work with phylogenies in R, the Newick format needs to be converted into
+a data structure that's R-compatible. This is typically an object of class
+`phylo`, which is a list with a particular structure. Most R packages for 
+phylogenetics have functions which can read in Newick strings and store the
+resulting trees as `phylo` objects. For this assignment we will be using
+`ape` (Analyses of Phylogenetics and Evolution). If you don't have this package
+installed already, you can do so and load it with the chunk below: 
+
+```{r}
+#install.packages("ape") #Uncomment this if you need to install
+library(ape)
+```
+
+Let's load in one of our example Newick strings from earlier using the function
+`read.tree()`:
+
+```{r}
+tree <- ape::read.tree(text = "(D:0.025,(C:0.01,(A:0.003,B:0.004):0.005):0.008);")
+tree
+```
+
+In addition to the `text` argument used here, you can also pass the function
+a file with a Newick string on the first line. Note you can also write from
+`phylo` object back to Newick string using `ape::write.tree()`. You can plot 
+the resulting tree using `plot()`:
+
+```{r}
+plot(tree)
+```
+
+Let's have a look at the structure of the resulting phylo object: 
+
+```{r}
+str(tree)
+```
+
+In the space below, explain the `edge.length`, `Nnode`, and `tip.label` 
+attributes, and what parts of the phylogeny they represent: 
+
+```
+
+```
+
+The `edge` attribute is what encodes the tree topology, and it is a little 
+less intuitive. Let's look at it more closely: 
+
+```{r}
+tree$edge
+```
+
+Each row represents an *edge*, or branch, in the tree, which
+connects a parent node (left column) to a daughter node (right column). The 
+order of rows is determined by a *preorder traversal*; each edge is visited by
+starting from the root and taking each unique path from the root to the tips. 
+By convention, the root is labelled as n+1 (where n is the number of tips) and
+subsequent internal nodes increase from there by order in which they are 
+visited, up to `n + Node`. Tips begin at 1 and also increase by the order 
+in which they are visited, ending at `1 + Nnode`. In the box below, 
+explain verbally which node is represented by each number in `tree$edge`:
+
+```
+
+```
+
+Packages like `ape` come with a variety of functions for manipulating and 
+extracting information from trees. For these exercises, we'll work with an
+empirical phylogeny of Darwin's finches from the package `geiger`:
+
+```{r}
+#install.packages("geiger") #Uncomment if you need to install geiger
+library(geiger)
+data(geospiza)
+geospiza_tree <- geospiza$phy
+```
+
+For each of the exercises below, rather than providing you with code,
+I will encourage you to look through the documentation of `ape` (or other
+packages if you prefer!) to find functions relevant to the task. First,
+prune the tree of the taxa `pauper`, `difficilis`, and `fortis`, save the new
+tree as `geospiza_tree_pruned`, and replot the pruned tree: 
+
+```{r}
+
+```
+
+From the original tree, extract a subtree for the clade containing `difficilis`
+and `fluginosa`, and plot it below: 
+
+```{r}
+
+```
+
+Check if the following two sets of taxa form a monophyletic group in the
+original tree: `Platyspiza, pauper, psittacula, parvulus`, `conirostris, magnirostris, fortis, fuliginosa`
+
+```{r}
+
+```
+
+Get the number assigned to the node that is the most recent common ancestor
+of `pauper` and `scandens`. What clade does this node define, and how is it 
+related to the rest of the phylogeny? 
+
+```{r}
+
+```
+
+Re-root the tree on `Pinaroloxias`. How does this change the perceived order
+of branching events? 
+
+```{r}
+
+```
+
+Finally, check if the tree is ultrametric:
+
+```{r}
+
+```
