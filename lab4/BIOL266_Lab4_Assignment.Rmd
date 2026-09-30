@@ -1,0 +1,100 @@
+---
+title: "BIOL266_Lab4_Assignment"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+remove(list=ls())
+```
+
+In this lab we will be studying the output of *OrthoFinder*, a popular program
+that uses local alignment tools like BLAST and distance-based clustering 
+approaches to identify sets of homologous genes across species. The input to
+OrthoFinder is a set of FASTA files, one for each species, containing 
+unaligned protein-coding sequences generated from RNA-Seq or genome assembly
+annotations. You can find the documentation of OrthoFinder here: 
+
+https://github.com/davidemms/orthofinder
+
+The primary output of OrthoFinder is a set of *orthogroups*, sets of gene 
+families across species that may be related by speciation (orthologs), 
+gene duplication and loss (paralogs), or horizontal transfer (xenologs). Since
+it is a summary of gene presence/absence variation across multiple genomes, these
+datasets are often referred to as *pangenomes*. We will be exploring an orthogroup 
+dataset generated for 56 angiosperm species by the Plants and Python NSF REU 
+teaching module at Michigan State University. Data source here: 
+
+https://github.com/PlantsAndPython/PlantsAndPython/tree/master/P_9_COMPARATIVE_GENOMICS
+
+We will be working with the data file `Practice9_Orthogroups.GeneCount.csv`, 
+which is provided in this week's assignment folder. Load the dataset into
+R below: 
+
+```{r}
+```
+
+Our goal is to explore patterns in this dataset, with the aim of identifying
+a curated list of orthogroups that may be useful for downstream phylogenetic
+reconstruction. First, consider the gene count data contained in an individual
+orthogroup (row). What does variation in gene count across species tell you
+about how these genes are related? For example, if species A has 3 gene copies
+and species B has one gene copy for an orthogroup, how would you describe the 
+evolutionary history of this orthogroup? Which sets of genes are orthologs and
+which are paralogs? 
+
+```
+```
+
+What proportion of orthogroups in this dataset contain enough information
+to potentially be useful for phylogenetic inference? 
+
+```{r}
+```
+Plot the number of orthogroups as a function of the number of species (k) that
+contain at least one gene copy for that orthogroup. Make two plots: 1) one with
+the number of orthogroups containing genes in *exactly* k species, and one with
+the number of orthogroups containing genes in *at least* k species. What 
+relationships do you see? How many orthogroups contain at least one gene in all 
+56 species? What might explain these patterns? (Hint: the relationship in
+the exactly k plot is common in pangenome datasets).
+
+```{r}
+```
+```
+```
+
+Recreate the at least k plot, but requiring exactly one gene copy in each species,
+rather than at least one (i.e. strict single-copy orthologs). How did the 
+results change? Why are we interested in this set of orthogroups for phylogenetic
+inference? 
+
+```{r}
+```
+```
+```
+
+We can also explore species-level patterns with this data. Create plots of
+1) the total number of genes per species (tallied across all orthogroups); 2)
+the mean number of genes per orthogroup per species (excluding zeroes). What
+patterns do you notice? What do you think might be contributing to these 
+patterns? 
+
+```{r}
+```
+
+```
+```
+In phylogenetics, there is generally a tradeoff between taxonomic sampling (
+the number of species represented in each gene alignment) and locus sampling (
+the number of genetic loci sampled per species). In general, you want enough
+taxonomic representation to be able to infer relationships among all your 
+studies species, and enough genetic loci to have statistical confidence in
+your inferred relationships among those species. Given these constraints,
+what criteria would you apply to the angiosperm dataset to generate a final
+list of orthologs for phylogenetic reconstruction? Explain your reasoning
+below: 
+
+```
+```
+
