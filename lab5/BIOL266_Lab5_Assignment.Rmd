@@ -1,0 +1,56 @@
+---
+title: "BIOL266_Lab5_Assignment"
+output: html_document
+date: "2026-09-04"
+---
+
+```{r}
+remove(list=ls())
+```
+
+In this lab, we will focus on understanding distance methods for phylogenetic
+reconstruction. The folder for this lab assignment contains five multiple 
+sequence alignment datasets in fasta format. Open the first file, 
+`dataset01_balanced.fasta`, in the space below. There are several R packages 
+that contain functions for parsing fasta files, although the data structure 
+they are stored in in R can differ.
+
+```{r}
+```
+From this multiple sequence alignment, calculate two genetic distance matrices,
+one using Hamming distance and one using Jukes-Cantor distances.You may use 
+external functions for this step. In the Hamming distance matrix, divide by
+the number of sites in the alignment (10,000) so it is normalized to per-site
+distances.
+
+```{r}
+```
+Compare the distances values in these two matrices. How are they different, and
+why might you be seeing these differences? Which matrix should you use for 
+phylogenetic reconstruction?
+
+```
+```
+In the space below, define two functions that take your constructed genetic
+distance matrix as input. One function should implement the UPGMA algorithm
+for phylogenetic reconstruction, and the other should implement neighbor-joining.
+Both functions should return a `Phylo` class object representing the constructed
+phylogeny. For this task, you may use external helper functions for things like
+individual calculaations or constructing the `Phylo` object, but each step of
+the algorithms themselves should be implemented by you and clearly documented.
+
+```{r}
+```
+```
+```
+
+Using both methods, reconstruct phylogenies from the remaining four provided
+multiple sequence alignments, and print the results. 
+
+```{r}
+```
+What do the differences between the UPGMA and NJ trees tell you about evolutionary
+rates in the underlying genetic datasets? 
+
+```
+```
