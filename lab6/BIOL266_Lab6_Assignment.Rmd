@@ -1,0 +1,218 @@
+---
+title: "BIOL266_Lab6_Assignment_Key"
+output:
+  pdf_document: default
+  html_document: default
+date: "2026-09-17"
+---
+
+```{r}
+remove(list=ls())
+```
+
+This lab will be focused on installing, running, and interpreting the 
+outputs of two popular programs for maximum-likelihood and Bayesian phylogenetic
+reconstruction:  `IQ-TREE` and `MrBayes`, respectively. The main documentation
+pages for these programs can be found at: 
+
+https://iqtree.github.io/
+https://nbisweden.github.io/MrBayes/
+
+First, you will need to install both programs on your machine at the command 
+line. For IQ-TREE, follow the instructions provided at 
+https://iqtree.github.io/doc/Quickstart. I recommend using the Debian Linux
+bundle installation if you are on WSL, and the Homebrew bundle installation
+if you are on Mac OS. 
+
+MrBayes is a bit trickier to install; instructions are available at 
+https://nbisweden.github.io/MrBayes/download.html. For both Linux and Mac
+users, I would recommend using Homebrew for this installation, as it will
+take care of all package dependencies. Instructions for installing Homebrew
+are available at https://brew.sh/. 
+
+With this lab, I've provided two input files: `dataset01_balanced.fasta`, which
+you used in the previous lab assignment, and `dataset01_balanced.nex`, which
+is the same dataset but reformatted for input to MrBayes. At the end of this
+file, you will see a block that begins with `BEGIN MRBAYES;`, followed by
+several arguments. What do you think the arguments `lset`, `prset`, and
+`mcmcp` are specifying? 
+
+```
+```
+
+To run IQTREE on the first file, you can use the command `iqtree2 -s dataset01_balanced.fasta -B 1000`
+after you've installed the program. In the space below, explain what the -B 
+argument does in this command: 
+
+```
+```
+
+For MrBayes, you can simply run `mb dataset01_balanced.nex`. When both analyses
+complete, they will output a series of files including the estimated phylogenetic
+trees and a set of log files. Copy these files into folders within your assignment
+directory so you can load them into RMarkdown for the rest of your assignment. 
+
+Have a look at the `.log` file that is output from IQ-TREE. Before IQ-TREE 
+actually does the ML optimization to find the best tree, there is a ModelFinder 
+step. What is the program doing in this step, and why is it important?
+
+```
+```
+
+From the output of MrBayes, have a look at the log files ending in `.t` and 
+`.p`. What information do they give you? 
+
+```
+```
+
+Load the trees estimated from both programs into this worksheet. The consensus
+tree from IQ-TREE in Newick string format is contained in the file ending in
+`.treefile` and can be loaded in directly with a variety of R packages for
+phylogenetics. The tree from MrBayes is in the file ending in `con.tre` and 
+is in a somewhat unusual format, so I am providing a helper function here,
+`read_mrbayes_tree()`, that will let you load it into R in `phylo` format: 
+
+```{r}
+strip_nexus_comments <- function(x) {
+  chars <- strsplit(x, "", fixed = TRUE)[[1]]
+  keep  <- logical(length(chars))
+  depth <- 0L
+  for (i in seq_along(chars)) {
+    ch <- chars[i]
+    if (ch == "[") {
+      depth <- depth + 1L
+    } else if (ch == "]") {
+      depth <- max(0L, depth - 1L)
+    } else if (depth == 0L) {
+      keep[i] <- TRUE
+    }
+  }
+  paste(chars[keep], collapse = "")
+}
+ 
+parse_translate <- function(txt) {
+  block <- regmatches(
+    txt, regexpr("(?si)translate.*?;", txt, perl = TRUE))
+  if (length(block) == 0L) return(character(0))
+ 
+  block <- sub("^\\s*translate", "", block, ignore.case = TRUE)
+  block <- sub(";\\s*$", "", block)
+  block <- strip_nexus_comments(block)
+ 
+  entries <- trimws(strsplit(block, ",")[[1]])
+  entries <- entries[nzchar(entries)]
+ 
+  keys   <- sub("^(\\S+)\\s+.*$", "\\1", entries)
+  labels <- trimws(sub("^\\S+\\s+", "", entries))
+  labels <- gsub("^'|'$", "", labels)          # drop NEXUS quoting
+ 
+  stats::setNames(labels, keys)
+}
+ 
+ 
+extract_tree_strings <- function(txt) {
+  lines <- strsplit(txt, "\n", fixed = TRUE)[[1]]
+  lines <- lines[grepl("^\\s*u?tree\\s", lines, perl = TRUE, ignore.case = TRUE)]
+  if (length(lines) == 0L) return(character(0))
+  trimws(sub("^[^=]*=\\s*", "", lines))
+}
+ 
+promote_prob_to_node_label <- function(nwk) {
+  gsub("\\)\\[&[^]]*?\\bprob=([0-9.eE+-]+)[^]]*\\]", ")\\1", nwk, perl = TRUE)
+}
+ 
+apply_translate <- function(nwk, tr) {
+  if (length(tr) == 0L) return(nwk)
+  m <- gregexpr("(?<=[(,])\\s*[0-9]+(?=\\s*[,:)])", nwk, perl = TRUE)
+  toks <- trimws(regmatches(nwk, m)[[1]])
+  if (length(toks) == 0L) return(nwk)
+  repl <- unname(tr[toks])
+  repl[is.na(repl)] <- toks[is.na(repl)]       # leave unknown indices as-is
+  regmatches(nwk, m) <- list(repl)
+  nwk
+}
+ 
+read_mrbayes_tree <- function(file,
+                              tree        = c("first"),
+                              node_labels = TRUE,
+                              burnin_frac = 0) {
+ 
+  tree <- match.arg(tree)
+ 
+  if (!requireNamespace("ape", quietly = TRUE)) {
+    stop("This function needs the 'ape' package: install.packages('ape')")
+  }
+  if (!file.exists(file)) {
+    stop("File not found: ", file)
+  }
+ 
+  txt <- paste(readLines(file, warn = FALSE), collapse = "\n")
+ 
+  tr   <- parse_translate(txt)
+  raw  <- extract_tree_strings(txt)
+  if (length(raw) == 0L) {
+    stop("No TREE statements found in ", file,
+         " -- is this really a NEXUS tree file?")
+  }
+ 
+  ## Discard burn-in before doing any of the expensive string work.
+  if (burnin_frac > 0) {
+    if (burnin_frac >= 1) stop("burnin_frac must be less than 1")
+    drop <- round(length(raw) * burnin_frac)
+    if (drop > 0) raw <- raw[-seq_len(drop)]
+  }
+  if (tree == "first") raw <- raw[1]
+ 
+  clean <- vapply(raw, function(nwk) {
+    if (node_labels) nwk <- promote_prob_to_node_label(nwk)
+    nwk <- strip_nexus_comments(nwk)
+    nwk <- gsub("\\s+", "", nwk)
+    nwk <- apply_translate(nwk, tr)
+    if (!grepl(";$", nwk)) nwk <- paste0(nwk, ";")
+    nwk
+  }, character(1), USE.NAMES = FALSE)
+ 
+  phy <- ape::read.tree(text = clean)
+ 
+  ## read.tree() returns a bare phylo for a single string and a multiPhylo
+  ## for several; normalise so the return type matches what was asked for.
+  if (tree == "first" && inherits(phy, "multiPhylo")) phy <- phy[[1]]
+  phy
+}
+```
+
+```{r}
+```
+
+Plot both trees, including node support values. Are they rooted or unrooted? 
+Why do you think these programs would return a tree that is unrooted/rooted? 
+
+```{r}
+```
+```
+```
+
+Interpret the node labels on both trees. What do they represent, generally,
+and what do their specific values tell you about this analysis? 
+
+```
+```
+
+Using an external function, root either tree on the ancestor of species 1 and
+2 and re-plot the results. How did the tree change? Are any of the changes
+surprising to you? Explain why. 
+
+```{r}
+```
+```
+```
+*Midpoint rooting* is an alternative to rooting on a specific node that roots
+the tree on the halfway point between the two tips with the longest between
+them. Use an external function (`phangorn` has an easy one) to root the same
+tree on the midpoint. How did the tree change? When might you want to use midpoint
+rooting?
+
+```{r}
+```
+```
+```
