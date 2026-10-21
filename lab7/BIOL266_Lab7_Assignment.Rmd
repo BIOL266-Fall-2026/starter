@@ -1,0 +1,109 @@
+---
+title: "BIOL266_Lab7_Assignment"
+output: html_document
+date: "2026-10-04"
+---
+
+```{r}
+remove(list=ls())
+```
+
+In this lab, the last of the three labs on phylogenetic reconstruction, we will
+be focusing on parsimony and inference from gene tree datasets. In the assignment
+folder, there are two multiple sequence alignment files, `alignment1.fasta` and
+`alignment2.fasta`. Load these alignment files into your R session:
+
+```{r}
+
+```
+
+Using whatever approach you prefer, reconstruct phylogenies from these two
+alignments under maximum parsimony and plot the results. 
+
+```{r}
+
+```
+
+Assume that both of these datasets were generated from the same underlying
+tree topology, and differ only in their rates of substitution. With this
+information, which of the two parsimony trees do you think better reflects
+the true topology? Explain your reasoning: 
+
+```
+
+```
+
+The assignment folder also contains two gene tree datasets, `gene_trees_1.nwk`
+and `gene_trees_2.nwk`. Each dataset consists of 1000 gene trees denoting
+relationships among four taxa, with each tree on an individual line as a 
+Newick string. Load these files into your R workspace: 
+
+```{r}
+
+```
+
+Assuming that each tree can be rooted on species D, tally the three different
+rooted topologies in `gene_trees_1` and report their frequencies: 
+
+```{r}
+
+```
+
+Based on these results, which of the three topologies do you think represents
+the species phylogeny? Explain your reasoning: 
+
+```
+```
+
+Are the two discordant tree topologies equal in frequency? Evaluate this
+with a chi-squared test. What do the results suggest about the biological
+processes that might be generating these discordant trees? 
+
+```{r}
+
+```
+
+```
+```
+
+Repeat the same analysis for the second gene tree dataset. What is different
+about the topology counts? What does this difference imply about the underlying
+processes generating the gene trees? 
+
+```{r}
+
+```
+
+```
+
+```
+
+For the last part of this assignment, you will apply the quartet-summary method
+`ASTRAL` to a larger gene tree dataset. `ASTRAL` is a method for phylogenetic
+reconstruction that tallies quartet gene tree topologies and reconciles them
+to infer a larger, single species-level phylogeny. The documentation for 
+`ASTRAL` is available at https://github.com/smirarab/ASTRAL. 
+
+For the data, you will be applying `ASTRAL` to a set of gene trees inferred
+from transcriptome data collected from wild relatives of the tomato, in the 
+clade *Solanum*. The data source is this paper: 
+
+https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1002379
+
+The relevant data file is included in your folder for this lab assignment
+and is named `Pease_etal_TomatoPhylo_100kbTrees_ASTRAL.tre`. Follow the 
+directions in the documentation for `ASTRAL` to run it on this dataset at the
+command line. Load the reconstructed tree into this assignment worksheet
+and plot it: 
+
+```{r}
+
+```
+
+Have a look at the edge lengths in this tree. They are different from edge lengths
+inferred from other phylogenetic methods, in two key ways. What are these 
+differences, and why might you expect to see them from a quartet summary method?
+
+```
+
+```
