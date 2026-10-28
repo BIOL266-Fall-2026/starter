@@ -1,0 +1,80 @@
+---
+title: "BIOL266_Lab8_Assignment.Rmd"
+output: html_document
+date: "2026-10-21"
+---
+
+```{r}
+remove(list=ls())
+```
+
+Paleontologists often only have morphological data, measured from fossil
+specimens, to work with when doing phylogenetic reconstruction. In this lab,
+we will explore some basic approaches to morphological phylogenetics, including
+character mapping, dealing with sparse / missing data, and parsimony 
+reconstruction from fossil characters. 
+
+Let's say you happen upon your biologist friend's field journal, which
+contains fossil descriptions for five previously unknown lizard species. 
+These descriptions can be found in the file `lizard_descriptions.txt` in your
+assignment folder.  From these descriptions, construct 2-3 characters that can 
+be mapped to each  species for downstream analysis. You can decide which 
+characters are important, and whether to encode them as discrete qualitative 
+states, integer counts, continuous measurements, etc. Note that data may be
+missing for some combinations of species / characters; this is often the case
+for fossil records and you can decide how to encode missing observations. 
+Note that for morphological characters, it is important to distinguish between
+features that are *observed to be absent* from a complete skeleton and those
+that are *missing* because of a lack of preservation.
+
+Construct a morphological character matrix, where each row is a species
+and each column is one of your chosen characters, with individual entries
+comprising individual observations of that character for a species. Print
+your character matrix in the code chunk below: 
+
+```{r}
+```
+
+In the box below, briefly explain why you chose the characters you did,
+and how you chose to encode those characters. If a character has missing data, 
+explain how you chose to handle the missing observations. 
+
+```
+```
+
+In the phylogenetics package `phangorn`, the function `bab()`, builds a phylogeny
+from a character matrix using the parsimony *branch and bound* method, which we
+discussed in class. Parsimony methods are still commonly used in morphological 
+phylogenetics due to difficulties in constructing distance corrections for 
+morphological characters, and because synapomorphies that can be used for 
+taxonomic classification naturally fall out of parsimony analyses. 
+
+Using your constructed character matrix, infer the most parsimonious tree(s)
+using `phangorn::bab()`. Note that, depending on your character matrix
+, you may have to convert continuous characters into discrete ones. For example, 
+you could convert a body size measurement into "small" and "large" using a 
+threshold value. 
+
+```{r}
+```
+Depending on your character matrix, `bab()` might return more than one tree.
+If you got more than one tree back, you can construct a majority-rules
+consensus tree from them using `ape::consensus(trees, p = 0.5)`. If you got
+one tree back, you can simply interpret that tree for subsequent questions. 
+Plot the unrooted tree below: 
+
+```{r}
+```
+Interpret the tree you got back in the context of your character mapping. Were
+you able to fully resolve all the branches? Why or why not?
+
+```
+```
+
+Say you receive a divine gift of knowledge and learn that the true rooted
+phylogeny relating these lizard species is `((A,B),(C,(D,E)));`. 
+With this knowledge, would any of your mapped characters be useful as 
+synapomorphies for taxonomy among these species? Explain below:
+
+```
+```

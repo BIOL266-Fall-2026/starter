@@ -1,0 +1,35 @@
+Lizard A
+Material: Three articulated skeletons, one with a complete skull. Lower lake beds, about 52 million years old.
+ 
+A robustly built lizard, with a snout–pelvis length of about 8 cm. A pair of short, conical horns projects backward from the rear corners of the skull roof. The horns are continuous with the skull bones underneath, with no suture between them. The orbits (eye sockets) are large, and one specimen preserves a complete sclerotic ring. The quadrate bone has a prominent curved crest that would have supported an eardrum. The palate carries a patch of small teeth on each pterygoid bone. Two specimens have 25 presacral vertebrae and one has 26. All four limbs are well developed, and every hand and foot has five complete digits. Small rectangular osteoderms cover the back in regular rows. In two specimens the tail is complete and about twice the snout–pelvis length. In the third, the tail ends after a short distance in an unsegmented rod of calcified cartilage, as in modern lizards that have regrown a lost tail.
+ 
+Lizard B
+Material: Eleven skeletons from two localities: the lower lake beds (about 50 million years old) and a younger river deposit (about 47 million years old).
+ 
+A slender lizard, with a snout–pelvis length of about 6 cm at the older locality. The specimens from the younger locality are on average about 25% larger. Five of the eleven specimens have a low ridge along the midline of the skull roof, and the other six have a smooth skull roof. The ridged specimens are larger on average, but both forms occur at both localities. The orbits are large, and sclerotic rings are present. The quadrate has a prominent curved crest. Small pterygoid teeth are present on the palate. There are 25–26 presacral vertebrae. All four limbs are well developed, and the hands and feet each have five complete digits. No osteoderms are preserved in any specimen. The tail is incomplete in every specimen; the longest preserved portion is 1.6 times the snout–pelvis length.
+ 
+Lizard C
+Material: Four partial skeletons and a clutch of eggs. Lower lake beds, about 50 million years old.
+ 
+Snout–pelvis length about 7 cm. The skull roof is smooth. The orbits are large, and sclerotic rings are present. The quadrate crest is present but low and only weakly curved. The palate is well preserved in two specimens and has no pterygoid teeth. There are 30–32 presacral vertebrae. Four limbs, slightly shorter relative to the trunk than in Lizard A. The hands have five complete digits. In the feet, digits I–IV are complete. Digit V has a full-length metatarsal, but it is tipped only by a single tiny nodule of bone, where Lizard A has four phalanges. Small, irregularly shaped osteoderms run along the midline of the back. In two specimens they form a neat row, but in the third they are scattered. The smallest specimen has none. The tail is complete in two specimens, at 1.3 and 1.5 times the snout–pelvis length. A clutch of five eggs was found in the same rock layer about 2 m from one skeleton. CT scans show near-hatching embryos inside, with skulls similar to Lizard C’s.
+ 
+Lizard D
+Material: Seven skeletons, including two small juveniles. Upper river deposits, about 41 million years old.
+ 
+An elongate lizard, with a snout–pelvis length of about 9 cm and 48–52 presacral vertebrae. The forelimbs are tiny, with two digits each. The hindlimbs are short but complete. In the feet, digits I–IV are small but complete, and digit V is a full-length metatarsal tipped by a single tiny nodule of bone, as in Lizard C. Above each orbit is a pointed bony projection. It is formed by a single osteoderm fused to the skull roof, and a visible suture separates it from the skull bone underneath. The orbits are small, and sclerotic rings are present. The quadrate has no crest. There are no pterygoid teeth. The two juveniles have no osteoderms on the back, while in adults overlapping osteoderms cover the entire body. The tail is 0.7–0.9 times the snout–pelvis length. One adult has three small articulated skeletons inside its body cavity. They are positioned head-first toward the pelvis, with no trace of eggshell.
+ 
+Lizard E
+Material: One partial skeleton, plus isolated vertebrae from the same layer. Upper river deposits, about 38 million years old.
+ 
+A very elongate, nearly limbless lizard. The skull is crushed flat, but its rear portion, including both quadrates, is intact; the quadrate has no crest. The crushing has exposed the palate, which has no pterygoid teeth. The top of the crushed skull shows a faint midline ridge, which could be real or a crushing artifact. The orbits are very small. No sclerotic ring is preserved, and it’s unclear whether it was absent in life or lost after death. The forelimbs are tiny, with two digits each. There are no hindlimb bones. A pair of small, rod-like bones near the pelvis represents a vestigial pelvic girdle. Part of the trunk is missing, so the presacral count is estimated at 50–58. A few small, isolated osteoderms lie near the trunk, but they could have washed in from elsewhere. The tail is broken; the preserved portion is 0.8 times the snout–pelvis length, and one tail vertebra has a bite mark. The abdominal region contains the partly scattered bones of two small vertebrates, too poorly preserved to identify.
+ 
+Glossary (for students)
+ 
+Osteoderm: a bony plate that forms in the skin.
+Sclerotic ring: a ring of small bony plates that supports the eyeball.
+Quadrate: the skull bone that the lower jaw hinges on. In many lizards its crest supports the eardrum.
+Pterygoid teeth: small teeth on the pterygoid bones, which form part of the roof of the mouth (palate).
+Presacral vertebrae: the vertebrae in front of the hips, i.e. those of the neck and trunk.
+Metatarsal / phalanx: bones of the foot and toes. Phalanges are the individual toe bones.
+Suture: a seam where two separate bones meet.
+ 
