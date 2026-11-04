@@ -1,0 +1,507 @@
+---
+title: "BIOL266_Lab9_Assignment"
+output: html_document
+date: "2026-10-30"
+---
+
+```{r}
+remove(list=ls())
+```
+
+About 66 million years ago, an asteroid struck the Yucatan peninsula, ending
+the Cretaceous period and wiping out the non-avian dinosaurs. Placental
+mammals, the group that includes primates, rodents, bats, whales, carnivores,
+and most other living mammals, diversified dramatically in the aftermath. But
+did the major placental lineages (the orders, such as Primates or Carnivora)
+originate *before* the extinction event and simply survive it, or did they
+arise *after* it, in the ecological space left behind by the dinosaurs?
+
+Researchers have proposed three broad models:
+
+1. **Explosive model**: both the splits *between* orders and the
+   diversification *within* orders (i.e. the crown group of each order)
+   happened after the K-Pg boundary
+2. **Long fuse model**: the splits between orders happened before the K-Pg
+   boundary, but the crown groups of most orders diversified after it
+3. **Short fuse model**: both the splits between orders and the
+   diversification within orders began before the K-Pg boundary
+
+The fossil record alone has struggled to settle this, because the earliest
+fossils of a group almost always postdate its true origin. In this lab, we
+will use divergence time estimation to tackle the question ourselves.
+
+## Building chronograms
+
+We will be using a dataset that comes packaged with `phangorn`: an alignment
+of 3,179 nucleotide sites for 47 mammal species, including representatives
+of most placental orders, four marsupials, and the platypus. Load the dataset
+with `data(Laurasiatherian)` and print a summary of it below:
+
+```{r}
+```
+
+I have already inferred a maximum-likelihood tree from this alignment using
+IQ-TREE under the GTR+G model, with the command
+`iqtree2 -s laurasiatherian.fasta -m GTR+G4`. The resulting tree is provided
+below as a Newick string. Run the chunk to load it:
+
+```{r}
+ml_newick <- "(Platypus:0.2991188365,((Wallaroo:0.0439928943,Possum:0.0525656627):0.0244840567,(Bandicoot:0.0557502373,Opposum:0.0988584730):0.0098427746):0.1298303661,((((Armadillo:0.1854686466,(Elephant:0.2595514214,(Aardvark:0.1314120261,Tenrec:0.2321731051):0.0152365662):0.0171906397):0.0258475871,(((Hedghog:0.1991928414,Gymnure:0.1765701271):0.0622538842,(Mole:0.0828536380,Shrew:0.0853058579):0.0130223267):0.0087127513,((((Rbat:0.0762229991,(FruitBat:0.1062354398,LongTBat:0.1655633739):0.0138356271):0.0163837034,(FlyingFox:0.0190793594,RyFlyFox:0.0230142554):0.0733707009):0.0231776420,(((Horse:0.0097113765,Donkey:0.0159115036):0.0510925541,(WhiteRhino:0.0362870304,IndianRhin:0.0329630809):0.0311338531):0.0197951851,(Pig:0.0894899624,(Alpaca:0.1084558384,((Cow:0.0423120313,Sheep:0.0454581615):0.0565821072,(Hippo:0.0994905208,((FinWhale:0.0199440633,BlueWhale:0.0189217928):0.0272591807,SpermWhale:0.0620637092):0.0543601529):0.0157172984):0.0103648044):0.0130040524):0.0207897807):0.0056964596):0.0067670521,(Cat:0.0643268765,(Dog:0.0722574928,((HarbSeal:0.0041999059,GraySeal:0.0096399718):0.0326309661,FurSeal:0.0687368851):0.0389650526):0.0145199515):0.0298627221):0.0122058306):0.0212881617):0.0108256334,((((Squirrel:0.1483548940,Dormouse:0.1416351655):0.0199378762,(GuineaPig:0.1412025895,CaneRat:0.1680906175):0.0543591443):0.0081177039,(Mouse:0.0981612430,Vole:0.0792150826):0.1423343635):0.0162673294,(((Baboon:0.1324601251,Human:0.0957607017):0.0435305541,Cebus:0.1427310327):0.0654765559,Loris:0.1716057282):0.0164849730):0.0083116828):0.0123020566,(Rabbit:0.0874323083,Pika:0.1388785898):0.0414341059):0.1183969548);"
+ml_tree <- ape::read.tree(text = ml_newick)
+```
+
+Run the code provided below to root the tree on Platypus, evenly splitting
+the branch length leading to Platypus across both clades. Plot the rooted tree
+with a scale bar (`ape::add.scale.bar()`).
+
+```{r}
+#Root on platypus
+library(phytools)
+plat <- which(ml_tree$tip.label == "Platypus")
+plat_length <- ml_tree$edge.length[ml_tree$edge[, 2] == plat]
+ml_tree_rooted <- phytools::reroot(ml_tree, plat, position = plat_length / 2)
+
+```
+
+What are the units of the branch lengths in this tree? Look at the distances
+from the root to each of the tips. Do all lineages appear to have accumulated
+the same amount of molecular change since they shared a common ancestor?
+Which lineages look like they have evolved fastest and slowest? What does
+this suggest about whether these sequences evolved under a strict molecular
+clock?
+
+```
+```
+
+## Testing the molecular clock
+
+In lecture, we discussed using a likelihood ratio test to decide whether a
+strict molecular clock is a good fit to the data. We'll do that here, keeping
+the tree topology fixed to the ML tree so that the only difference between
+the two models is the clock constraint.
+
+Both models can be fit with functions from `phangorn`, starting from the
+same initial tree. The clock model needs a starting tree that is rooted and
+ultrametric, so we'll make one from the ML tree using the `phangorn`
+function `nnls.tree()`, which takes a matrix of pairwise distances between
+tips (`ape::cophenetic()` calculates this from a tree) and a tree topology:
+`nnls.tree(cophenetic(tree), tree, method = "ultrametric", rooted = TRUE)`.
+This keeps the topology of your rooted ML tree, but adjusts the branch
+lengths so that the tree is ultrametric. Create this starting tree and plot
+it:
+
+```{r}
+```
+Note that the plot of the ultrametric tree will appear to have many polytomies.
+This is an artifact of the non-negative least squares method that `phangorn`
+uses to calculate branch lengths. The branches are in fact resolved and are just
+assigned branch lengths of zero. We will fix this in a moment. 
+
+The function `pml()` takes a tree, an alignment, and a substitution model,
+and calculates the likelihood of the alignment given the tree and model. The
+function `optim.pml()` takes the output of `pml()` and optimizes the branch
+lengths and model parameters to maximize the likelihood. The general
+workflow looks like this:
+
+```
+fit <- pml(tree, alignment, model = "GTR", k = 4)
+fit <- optim.pml(fit, optNni = FALSE, optQ = TRUE, optBf = TRUE, optGamma = TRUE)
+fit$logLik
+```
+
+Here, `k = 4` specifies four gamma rate categories (modelling site heterogeneity
+in evolutionary rates), `optNni = FALSE` keeps the topology fixed, and `optQ`, 
+`optBf`, and `optGamma` tell `optim.pml()` to optimize the substitution rates, 
+base frequencies, and gamma shape parameter.
+
+Use this workflow with your ultrametric starting tree to fit both models.
+For the no clock model, use the workflow exactly as written above; because
+every branch length is optimized freely, the tree will no longer be
+ultrametric after optimization. (`pml()` will warn you that it unrooted the
+tree; this is expected, since the no clock model is unrooted.) For the clock
+model, add `optRooted = TRUE` to `optim.pml()`. This is the argument that
+imposes the molecular clock: instead of optimizing each branch length
+independently, it optimizes the ages of the nodes, so the tree stays rooted
+and ultrametric. For more details on any of these functions, see their help
+pages (e.g. `?optim.pml`). Report the log-likelihoods of both models:
+
+```{r}
+```
+
+Using the log-likelihoods, calculate the likelihood ratio test statistic and
+its p-value by hand (see lecture 7) using `pchisq()`. A few notes for implementing
+this: 
+
+- Make sure you use the correct number of degrees of freedom for this dataset. 
+- Because your likelihoods are already logged, the formula becomes a subtraction 
+of the log-likelihoods rather than a division of the original likelihoods.
+- In `pchisq()`, make sure to set lower.tail = FALSE, because you are testing
+against the upper tail of the distribution (i.e. the probability of observing
+a LRT value at least as large under the null hypothesis).
+
+```{r}
+```
+
+Which of the two models is the simpler one, and why? Based on your test, is
+a strict molecular clock a good fit for this dataset?
+
+```
+```
+
+## Clock models and relative chronograms
+
+The `ape` function `chronos()` converts a phylogram into a chronogram using
+a method called *penalized likelihood*, which estimates the age of each node
+under a choice of clock models. Without any calibration information,
+`chronos()` returns a relative chronogram with the root age set to 1.
+
+Use `chronos()` to estimate three relative chronograms from your rooted
+phylogram: one under a strict clock (`model = "clock"`), one under a correlated 
+relaxed clock (`model = "correlated"`), and one under an uncorrelated relaxed 
+clock (`model = "relaxed"`). `chronos()` may give you warnings about convergence;
+you can ignore these for this assignment. Plot your original phylogram
+alongside the strict clock chronogram:
+
+```{r}
+```
+
+What changed between the phylogram and the chronogram, and what stayed the
+same? What are the units of the chronogram?
+
+```
+```
+
+`chronos()` reports a model fit criterion called the PHIIC (penalized
+likelihood information criterion) for each model, which you can access with
+`attr(chronogram, "PHIIC")`. Like AIC, lower values indicate a better
+balance between fit and model complexity. Report the PHIIC for each of your
+three models:
+
+```{r}
+```
+
+Which clock model is preferred? How does this compare to the result of your
+likelihood ratio test?
+
+```
+```
+
+## Fossil calibrations
+
+To convert a relative chronogram into an absolute chronogram, we need
+information about the ages of some nodes from the fossil record. The chunk
+below creates a data frame of four fossil calibrations, adapted from a
+published compilation of fossil calibrations for mammals. Each calibrated
+node is defined as the common ancestor of two taxa (`taxon1` and `taxon2`),
+and all ages are in millions of years (Ma). Run the chunk to load the
+calibrations:
+
+```{r}
+calibrations <- data.frame(
+  clade   = c("Theria", "Whippomorpha", "Perissodactyla", "Catarrhini"),
+  description = c("marsupials + placentals", "hippos + whales",
+                  "horses + rhinos", "Old World monkeys + apes"),
+  taxon1  = c("Wallaroo", "Hippo", "Horse", "Baboon"),
+  taxon2  = c("Human", "FinWhale", "IndianRhin", "Human"),
+  fossil  = c("Juramaia sinensis, the oldest known eutherian",
+              "Pakicetus and other early stem cetaceans",
+              "Earliest crown perissodactyls",
+              "Earliest crown catarrhines"),
+  min_age = c(156.3, 52.4, 55.0, 24.44),
+  max_age = c(169.6, NA, NA, NA)
+)
+calibrations
+```
+
+Sources for the fossil calibrations: the minimum and maximum ages for
+Theria, Whippomorpha, and Catarrhini are adapted from Table 2 of Tarver et
+al. (2016), which draws on the calibrations compiled by Benton et al.
+(2015). The minimum age for Perissodactyla is an approximate value based on
+the earliest Eocene perissodactyl fossils, and is not taken from these
+compilations.
+
+* Benton, M. J., et al. (2015). Constraints on the timescale of animal
+  evolutionary history. *Palaeontologia Electronica*, 18.1.1FC.
+  https://palaeo-electronica.org/content/fc-1
+* Tarver, J. E., et al. (2016). The interrelationships of placental mammals
+  and the limits of phylogenetic inference. *Genome Biology and Evolution*,
+  8(2), 330-344. https://academic.oup.com/gbe/article/8/2/330/2574016
+
+`chronos()` takes calibrations as a data frame with one row per calibrated
+node and the columns `node`, `age.min`, `age.max`, and `soft.bounds`. Below,
+I've provided a function which will construct a dataframe for `chronos()` in
+the correct format using the provided calibrations: 
+
+```{r}
+make_chronos_calib <- function(tree, calibrations, type = c("minimum", "exact"),
+                               default_max = max(calibrations$max_age, na.rm = TRUE)) {
+  type <- match.arg(type)
+  # node number for each calibration = MRCA of its two defining taxa
+  nodes <- mapply(function(a, b) ape::getMRCA(tree, c(a, b)),
+                  calibrations$taxon1, calibrations$taxon2)
+  age_min <- calibrations$min_age
+  if (type == "exact") {
+    # fossil age treated as the exact age of the node
+    age_max <- calibrations$min_age
+  } else {
+    # fossil age treated as a minimum; missing maxima get default_max
+    age_max <- ifelse(is.na(calibrations$max_age), default_max, calibrations$max_age)
+  }
+  data.frame(node = unname(nodes), age.min = age_min, age.max = age_max,
+             soft.bounds = FALSE)
+}
+```
+
+Using the best-fitting clock model from earlier, estimate two absolute chronograms.
+In the first, treat each fossil age as the exact age of its node (set
+`age.min` and `age.max` both equal to `min_age`). In the second, treat each
+fossil age as a minimum bound, using `max_age` where it exists; for
+calibrations without a maximum, use the maximum age of the Theria
+calibration, since none of these nodes should be older than that. Plot both
+chronograms with a time axis (`ape::axisPhylo()` is useful here):
+
+```{r}
+```
+
+Compare the time axes betwen the two chronograms. In general, how did the node 
+ages change between the two analyses? Why do they shift the way they do, and why 
+is treating fossil ages as minimum bounds more appropriate than treating them as 
+exact node ages?
+
+```
+```
+
+*Pakicetus* is a *stem* cetacean; that is, it is more closely related to
+living whales than to hippos, but falls outside of the group containing all
+living whales. Using your minimum-bound chronogram, report the crown age of
+Cetacea (the common ancestor of FinWhale and SpermWhale) and its stem age
+(the age of the node where whales split from their closest relative in the
+tree):
+
+```{r}
+```
+
+Which of these two ages does *Pakicetus* actually constrain, and why?
+
+```
+```
+
+## Bayesian divergence time estimation
+
+`chronos()` gives us a point estimate of each node age, but no measure of
+uncertainty. To get one, we will do Bayesian divergence time estimation with
+`MrBayes`, which you installed in Lab 6. Because a full analysis that also
+estimates the topology would take hours on a laptop, we will fix the topology
+to the maximum-likelihood tree and only estimate node ages. The function
+below writes a MrBayes input file containing the alignment, your tree, and a
+`MRBAYES` block with the analysis settings. Run the chunk to define the
+function:
+
+```{r}
+write_mrbayes_dating <- function(tree, alignment, file, calibrations,
+                                 tree_age, ngen = 500000) {
+  # alignment and tree tips must match
+  stopifnot(setequal(tree$tip.label, names(alignment)))
+  tree$edge.length <- NULL
+  tree$node.label <- NULL
+  phangorn::write.phyDat(alignment, file, format = "nexus")
+  cat("\nBEGIN TREES;\n  TREE mltree = ", ape::write.tree(tree),
+      "\nEND;\n", file = file, append = TRUE, sep = "")
+
+  constraint_lines <- sapply(names(calibrations), function(cl)
+    paste0("  constraint ", cl, " = ",
+           paste(calibrations[[cl]]$taxa, collapse = " "), ";"))
+  calibrate_lines <- sapply(names(calibrations), function(cl)
+    paste0("  calibrate ", cl, " = ", calibrations[[cl]]$prior, ";"))
+
+  block <- c(
+    "",
+    "BEGIN MRBAYES;",
+    "  set autoclose=yes;",
+    "  lset nst=6 rates=gamma;",
+    constraint_lines,
+    calibrate_lines,
+    "  prset brlenspr = clock:uniform;",
+    paste0("  prset topologypr = constraints(",
+           paste(names(calibrations), collapse = ", "), ");"),
+    paste0("  prset treeagepr = ", tree_age, ";"),
+    "  prset nodeagepr = calibrated;",
+    "  prset clockvarpr = igr;",
+    "  prset clockratepr = lognormal(-6, 1);",
+    paste0("  mcmcp ngen=", format(ngen, scientific = FALSE),
+           " samplefreq=500 printfreq=10000 diagnfreq=10000",
+           " nchains=1 nruns=2;"),
+    "  startvals tau = mltree;",
+    "  propset ExtSprClock(Tau,V)$prob=0 NNIClock(Tau,V)$prob=0 ParsSPRClock(Tau,V)$prob=0;",
+    "  mcmc;",
+    "  sump;",
+    "  sumt;",
+    "END;"
+  )
+  cat(block, file = file, append = TRUE, sep = "\n")
+  invisible(file)
+}
+```
+
+The `calibrations` argument is a named list with one entry per calibrated
+node, each containing all of the taxa that belong to the node and a MrBayes
+prior on its age. The `tree_age` argument is the prior on the age of the
+root (here, the split between the platypus and all other mammals). Here are
+the calibrations from the `calibrations` data frame, treating each fossil
+age as a minimum bound:
+
+```{r}
+calib <- list(
+  theria         = list(taxa  = setdiff(names(Laurasiatherian), "Platypus"),
+                        prior = "uniform(156.3, 169.6)"),
+  whippomorpha   = list(taxa  = c("Hippo", "FinWhale", "BlueWhale",
+                                  "SpermWhale"),
+                        prior = "offsetexponential(52.4, 57.4)"),
+  perissodactyla = list(taxa  = c("Horse", "Donkey", "WhiteRhino",
+                                  "IndianRhin"),
+                        prior = "offsetexponential(55.0, 60.0)"),
+  catarrhini     = list(taxa  = c("Baboon", "Human"),
+                        prior = "offsetexponential(24.44, 29.44)")
+)
+```
+
+Use `write_mrbayes_dating()` with your rooted ML tree, the alignment, and
+`calib` to write an input file called `lab9_mammals.nex`, with
+`tree_age = "uniform(156.3, 250)"`:
+
+```{r}
+```
+
+Open `lab9_mammals.nex` and look at the `MRBAYES` block at the end. The
+`startvals` and `propset` lines start the analysis from the ML tree and turn
+off the MCMC moves that change the topology, which is how we keep the
+topology fixed. Using the MrBayes manual (linked in Lab 6), briefly explain
+what the `calibrate`, `treeagepr`, `nodeagepr`, and `clockvarpr` commands
+are specifying. Why does the offset exponential distribution make sense as a
+prior on the age of a node calibrated by a fossil?
+
+```
+```
+
+Run the analysis at the command line with `mb lab9_mammals.nex`. This may take
+a while, depending on your machine. When it finishes, the file ending in `.con.tre`
+contains the consensus tree with summaries of the posterior distribution of
+each node age. As in Lab 6, this file is in an unusual format, so the helper
+function below will load it for you. It returns a list containing the tree
+(with median node ages as node labels) and a data frame with the median and
+95% highest posterior density (HPD) interval of the age of each node:
+
+```{r}
+read_mrbayes_ages <- function(file) {
+  txt <- paste(readLines(file, warn = FALSE), collapse = "\n")
+
+  # translate table: tip numbers -> taxon names
+  block <- regmatches(txt, regexpr("(?si)translate.*?;", txt, perl = TRUE))
+  block <- sub(";\\s*$", "", sub("^\\s*translate", "", block))
+  entries <- trimws(strsplit(block, ",")[[1]])
+  entries <- entries[nzchar(entries)]
+  tr_map <- setNames(sub("^\\S+\\s+", "", entries), sub("\\s.*$", "", entries))
+
+  # consensus tree statement
+  nwk <- regmatches(txt, regexpr(
+    "(?i)tree\\s+con_50_majrule\\s*=\\s*(\\[&[RU]\\]\\s*)?[^;]*;", txt,
+    perl = TRUE))
+  nwk <- sub("^[^=]*=\\s*(\\[&[RU]\\]\\s*)?", "", nwk)
+
+  # replace internal node annotations with temporary labels
+  ann <- regmatches(nwk, gregexpr("\\[&[^]]*\\]", nwk))[[1]]
+  pieces <- strsplit(nwk, "\\[&[^]]*\\]")[[1]]
+  out <- pieces[1]
+  node_ann <- character(0)
+  for (i in seq_along(ann)) {
+    if (grepl("\\)$", out)) {
+      node_ann <- c(node_ann, ann[i])
+      out <- paste0(out, "N", length(node_ann))
+    }
+    if (i + 1 <= length(pieces)) out <- paste0(out, pieces[i + 1])
+  }
+  out <- gsub("\\s+", "", out)
+
+  # tip numbers -> names
+  m <- gregexpr("(?<=[(,])[0-9]+(?=[:,)])", out, perl = TRUE)
+  regmatches(out, m) <- list(unname(tr_map[regmatches(out, m)[[1]]]))
+  phy <- ape::read.tree(text = out)
+
+  get_value <- function(a, key)
+    as.numeric(sub(paste0(".*\\b", key, "=([0-9.eE+-]+).*"), "\\1", a))
+  get_hpd <- function(a, i) {
+    v <- sub(".*age_95%HPD=\\{([^}]*)\\}.*", "\\1", a)
+    as.numeric(sapply(strsplit(v, ","), `[`, i))
+  }
+
+  idx <- as.integer(sub("^N", "", phy$node.label))
+  ages <- data.frame(node       = ape::Ntip(phy) + seq_len(ape::Nnode(phy)),
+                     age_median = get_value(node_ann[idx], "age_median"),
+                     hpd_lower  = get_hpd(node_ann[idx], 1),
+                     hpd_upper  = get_hpd(node_ann[idx], 2))
+  phy$node.label <- round(ages$age_median, 1)
+  list(tree = phy, ages = ages)
+}
+```
+
+The code below will load the consensus tree (obtained from read_mrbayes_ages)
+and plot it with the 95% HPDinterval of each node age shown as a bar, 
+a time axis, and a vertical line at  66 Ma marking the K-Pg boundary. 
+Run it to generate the plot (you may have to change the path to your version of 
+the output file from MrBayes): 
+
+```{r}
+mb <- read_mrbayes_ages("lab9_mammals.nex.con.tre")
+mb_tree <- mb$tree
+mb_ages <- mb$ages
+
+# Plot the tree, leaving space on the left so the oldest HPD bars aren't cut off
+plot(mb_tree, cex = 0.6, label.offset = 1,
+     x.lim = c(-0.15 * max(mb_ages$hpd_upper), max(mb_ages$hpd_upper) * 1.15))
+
+# Plotting coordinates of every node
+pp <- get("last_plot.phylo", envir = .PlotPhyloEnv)
+n <- mb_ages$node
+
+# 95% HPD intervals as semi-transparent bars at each node
+segments(x0 = pp$xx[n] + (mb_ages$age_median - mb_ages$hpd_upper),
+         x1 = pp$xx[n] + (mb_ages$age_median - mb_ages$hpd_lower),
+         y0 = pp$yy[n], col = rgb(0, 0, 1, 0.4), lwd = 5, lend = 1)
+
+# Time axis and the K-Pg boundary (66 Ma before the tips)
+axisPhylo(backward = TRUE)
+mtext("Millions of years ago", side = 1, line = 2.5, cex = 0.8)
+kpg_x <- max(pp$xx[1:Ntip(mb_tree)]) - 66
+abline(v = kpg_x, lty = 2, col = "red")
+text(kpg_x, Ntip(mb_tree) + 1, "K-Pg", col = "red", cex = 0.7, pos = 4, xpd = TRUE)
+```
+
+Is there a relationship between the age of a node and the uncertainty of its
+age estimate? Give at least one reason why we might expect this.
+
+```
+```
+
+## Answering the question
+
+The table below lists the placental orders represented in our dataset, along
+with the species that belong to each.
+
+| Order | Taxa in our dataset |
+|---|---|
+| Primates | Human, Baboon, Cebus, Loris |
+| Rodentia | Mouse, Vole, Squirrel, Dormouse, GuineaPig, CaneRat |
+| Lagomorpha | Rabbit, Pika |
+| Chiroptera | Rbat, FlyingFox, RyFlyFox, FruitBat, LongTBat |
+| Eulipotyphla | Hedghog, Gymnure, Mole, Shrew |
+| Carnivora | Cat, Dog, HarbSeal, FurSeal, GraySeal |
+| Perissodactyla | Horse, Donkey, WhiteRhino, IndianRhin |
+| Cetartiodactyla | Pig, Alpaca, Cow, Sheep, Hippo, FinWhale, BlueWhale, SpermWhale |
+
+Based on these results, did the crown groups of the placental orders in this
+dataset arise before or after the K-Pg boundary? Which of the three models 
+described at the start of the assignment (explosive, long fuse, or short fuse) 
+do your results best support?
+
+```
+```
