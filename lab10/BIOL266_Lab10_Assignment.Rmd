@@ -1,0 +1,283 @@
+---
+title: "BIOL266_Lab10_Assignment"
+output: html_document
+date: "2026-11-06"
+---
+
+```{r}
+remove(list=ls())
+library(ape)
+library(phytools)
+library(phangorn)
+```
+
+Darters (Percidae: Etheostomatinae) are small, often brilliantly colored
+freshwater fishes found in the streams and rivers of eastern North America,
+including several species in New York. With roughly 250 species, they are one
+of the most species-rich groups of freshwater vertebrates on the continent.
+Most darter species belong to one of two genera: *Etheostoma*, which contains
+around three times as many species as the other, *Percina*. Has *Etheostoma*
+diversified faster than other darters, or is its species richness the kind of
+outcome we should expect by chance from a constant-rate process of speciation
+and extinction? In this lab, we will use birth-death models to find out.
+
+## Simulating the birth-death process
+
+In lecture, we discussed a simple algorithm for simulating the birth-death
+process. If there are currently $N$ lineages, then:
+
+1. Draw a waiting time to the next event from an exponential distribution
+   with rate $N(\lambda + \mu)$
+2. If the next event happens after the end of the simulation, stop
+3. Decide whether the event is a speciation event (with probability
+   $\frac{\lambda}{\lambda + \mu}$) or an extinction event (otherwise)
+4. Add one lineage for a speciation event, or remove one for an extinction
+   event. If there are no lineages left, stop; otherwise return to step 1
+
+Since we only care about the number of lineages for now, we don't need to
+keep track of the tree itself. Complete the function below so that it
+returns the number of lineages alive at time `tmax`, starting from `n0`
+lineages. The functions `rexp()` and `runif()` may be useful, as will a
+`repeat` or `while` loop (with `break` to exit it).
+
+```{r}
+sim_bd <- function(lambda, mu, tmax, n0 = 1) {
+  N <- n0     # current number of lineages
+  time <- 0   # current time
+  speciation_prob <- lambda/(lambda+mu)
+  # Your code here: repeat steps 1-4 until the simulation ends
+
+  return(N)
+}
+```
+
+Run `set.seed(266)`, then use `replicate()` to run your function 10,000
+times with $\lambda = 0.3$, $\mu = 0.1$, `tmax = 10`, and `n0 = 1`. Plot a
+histogram of the results, and report the mean number of lineages and the
+proportion of simulations in which the clade went extinct. Compare these to
+the expectations from lecture: the expected number of lineages after time
+$t$ is $N(t) = n_0 e^{rt}$, and the probability that a single starting
+lineage has gone extinct by time $t$ is
+$\alpha = \frac{\epsilon (e^{rt} - 1)}{e^{rt} - \epsilon}$, where
+$r = \lambda - \mu$ and $\epsilon = \frac{\mu}{\lambda}$.
+
+```{r}
+```
+
+How do your simulation results compare to the expectations? Why is the
+distribution of outcomes so skewed, and what does this tell you about how
+predictable the number of species in a clade is, even when the speciation
+and extinction rates are constant?
+
+```
+```
+
+## Lineage-through-time plots
+
+The darter phylogeny we will use comes packaged with `phytools`, and is
+adapted from a time-calibrated tree published by Near et al. (2011), who
+recognized 248 darter species. Load it with `data(darter.tree)`, plot it
+(`type = "fan"` and a small `cex` will help), and report the number of tips,
+the age of the root (`branching.times()` is useful here), and the proportion
+of darter species included in the tree:
+
+```{r}
+```
+
+Near, T. J., et al. (2011). Phylogeny and temporal diversification of
+darters (Percidae: Etheostomatinae). *Systematic Biology*, 60(5), 565-595.
+https://doi.org/10.1093/sysbio/syr052
+
+The code below uses `phytools::pbtree()` to simulate three trees with 200 
+sampled tips each: one under a pure-birth model, one under a birth-death model 
+(keeping only the extant lineages), and one under a pure-birth model where only 
+25% of living species were sampled. Run the chunk to simulate the trees:
+
+```{r}
+set.seed(266)
+pb_tree <- pbtree(b = 0.2, n = 200)
+# pbtree() returns NULL if the whole clade goes extinct, so try until it doesn't
+# (you may see a few "no extant tips" warnings from this; they can be ignored)
+repeat {
+  bd_tree <- pbtree(b = 0.4, d = 0.3, n = 200, extant.only = TRUE)
+  if (!is.null(bd_tree)) break
+}
+full_tree <- pbtree(b = 0.2, n = 800)
+sampled_tree <- drop.tip(full_tree, sample(full_tree$tip.label, 600))
+```
+
+Use `ape::ltt.plot()` with `log = "y"` to make lineage-through-time plots for
+the three simulated trees and the darter tree, side by side
+(`par(mfrow = c(1, 4))`):
+
+```{r}
+```
+
+Describe the shape of each simulated plot near the present, and explain why
+each scenario produces that shape. Which does the darter plot most resemble,
+and what does this suggest about the role of extinction and incomplete
+sampling in the darter tree?
+
+```
+```
+
+## Tree balance
+
+In lecture, we discussed Colless' index as a way to summarize the balance of
+a whole tree:
+
+$$I_C = \frac{\sum_{nodes}|N_L - N_R|}{\frac{(N-1)(N-2)}{2}}$$
+
+where $N_L$ and $N_R$ are the numbers of tips descended from the left and
+right daughters of each internal node, and $N$ is the number of tips in the
+tree. A perfectly balanced tree has $I_C = 0$, and a maximally unbalanced
+(caterpillar) tree has $I_C = 1$. The function below calculates Colless'
+index for a tree. Run the chunk to define it:
+
+```{r}
+colless <- function(tree) {
+  N <- ape::Ntip(tree)
+  total <- 0
+  for (node in (N + 1):(N + tree$Nnode)) {
+    kids <- phangorn::Children(tree, node)
+    sizes <- sapply(kids, function(k)
+      if (k <= N) 1 else length(phangorn::Descendants(tree, k)[[1]]))
+    total <- total + abs(sizes[1] - sizes[2])
+  }
+  total / ((N - 1) * (N - 2) / 2)
+}
+```
+
+Consider the tree `((((A,B),C),(D,E)),F);`. Calculate Colless' index for
+this tree by hand, showing the value of $|N_L - N_R|$ for each internal
+node:
+
+```
+```
+
+Load the tree with `ape::read.tree(text = ...)` and check your answer using
+`colless()`. Then calculate Colless' index for the darter tree. To get a
+sense of what values to expect for a tree of this size under a
+constant-rate model, run `set.seed(266)`, use `pbtree()` to simulate 100
+pure-birth trees with the same number of tips as the darter tree
+(`nsim = 100`), and calculate the mean Colless' index of the simulated trees:
+
+```{r}
+```
+
+Is the darter tree more or less balanced than a typical tree from a
+constant-rate pure-birth model? In lecture, we saw that under a pure-birth
+model, every possible split of a node's descendants between its two
+daughter clades is equally likely. Given this, why should we be cautious
+about treating any single unbalanced node in a tree as evidence of different
+diversification rates?
+
+```
+```
+
+## Fitting birth-death models by maximum likelihood
+
+The birth-death likelihood we discussed in lecture uses the ages of every
+node in the tree, in addition to the number of species and the age of a
+clade. The `phytools` functions `fit.yule()` and `fit.bd()` find the
+maximum-likelihood estimates of the speciation rate (pure-birth model) or the
+speciation and extinction rates (birth-death model) for a tree. Fit both
+models to the darter tree and report the estimated rates and log-likelihoods
+(`logLik()`). Then compare the two models with a likelihood ratio test,
+calculating the test statistic and p-value  `pchisq()` as in Lab
+9:
+
+```{r}
+```
+
+Which model is preferred? Is this consistent with your LTT plot of the
+darter tree?
+
+```
+```
+
+By default, both functions assume that the tree contains every living
+species in the clade. The argument `rho` lets you specify the proportion of
+species that were sampled. Refit the birth-death model with `rho` set to the
+sampling proportion you calculated earlier, and calculate the net
+diversification rate ($\lambda - \mu$) for the birth-death model with and
+without accounting for incomplete sampling:
+
+```{r}
+```
+
+Which of the estimated quantities (speciation rate, extinction rate, net
+diversification rate, log-likelihood) changed, and which stayed essentially
+the same? What does this suggest about our ability to estimate extinction
+rates separately from speciation rates using a phylogeny of living species
+only?
+
+```
+```
+
+## Testing for diversification rate variation
+
+Finally, we'll test directly whether *Etheostoma* has diversified faster than
+other darters. The code below collects the tips belonging to *Etheostoma*.
+Note that in this tree, the one species of the genus *Nothonotus* falls
+inside *Etheostoma*, so we'll include it there:
+
+```{r}
+etheostoma_tips <- darter.tree$tip.label[grepl("^Etheostoma|^Nothonotus",
+                                               darter.tree$tip.label)]
+```
+
+In lecture, we discussed the sister-clade test: when a node
+with $N_{total}$ descendants splits into clades of sizes $N_a$ and $N_b$,
+with $N_b < N_a$, the probability under a constant-rate model of a split at
+least this unequal is $P = \frac{2N_b}{N_{total} - 1}$. We also discussed
+fitting a model where one clade diversifies at a different rate from the rest
+of the tree, and comparing it to a single-rate model. The function below does
+this for a pure-birth (Yule) model. With `node = NULL`, it fits a single
+speciation rate to the whole tree; given a node, it fits one speciation rate
+to the clade descended from that node (including the branch leading to it)
+and a second rate to the rest of the tree. Run the chunk to define the
+function:
+
+```{r}
+yule_shift <- function(tree, node = NULL) {
+  n_spec <- tree$Nnode - 1   # number of speciation events (root excluded)
+  if (is.null(node)) {
+    X <- sum(tree$edge.length)
+    lambda <- n_spec / X
+    loglik <- lfactorial(tree$Nnode) + n_spec * log(lambda) - lambda * X
+    return(list(lambda = lambda, logLik = loglik, n_params = 1))
+  }
+  # Branches inside the clade (including its stem branch) vs. everywhere else
+  clade_nodes <- c(node, phangorn::Descendants(tree, node, type = "all"))
+  inside <- tree$edge[, 2] %in% clade_nodes
+  X_in <- sum(tree$edge.length[inside])
+  X_out <- sum(tree$edge.length[!inside])
+  # Speciation events inside the clade vs. everywhere else
+  k_in <- sum(clade_nodes > ape::Ntip(tree))
+  k_out <- n_spec - k_in
+  lambda_in <- k_in / X_in
+  lambda_out <- k_out / X_out
+  loglik <- lfactorial(tree$Nnode) + k_in * log(lambda_in) -
+    lambda_in * X_in + k_out * log(lambda_out) - lambda_out * X_out
+  list(lambda_clade = lambda_in, lambda_background = lambda_out,
+       logLik = loglik, n_params = 2)
+}
+```
+
+Identify the sister group of *Etheostoma* (which genera does it contain?) and
+apply the sister-clade test to the two clades. Then use `yule_shift()` to fit
+a single-rate model and a model with a separate rate for *Etheostoma*, and
+compare them using AIC:
+
+```{r}
+```
+
+Is there evidence from either test that *Etheostoma* diversified faster than
+other darters? Based on all of your results, what is the most likely
+explanation for the large number of species in *Etheostoma*? Describe at
+least one limitation of these analyses that should make us cautious about
+this conclusion.
+
+```
+```
