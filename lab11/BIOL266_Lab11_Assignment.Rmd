@@ -1,0 +1,270 @@
+---
+title: "BIOL266_Lab11_Assignment"
+output: html_document
+date: "2026-11-12"
+---
+
+```{r}
+remove(list=ls())
+library(ape)
+library(phytools)
+```
+
+Turtles and tortoises (order Testudines) span an enormous range of body sizes.
+The speckled padloper tortoise of southern Africa reaches only about 10 cm in
+shell length, while the leatherback sea turtle can grow to well over 2 m. New
+York is home to species near both ends of this range: the bog turtle, one of
+the smallest turtles in North America, lives in a few scattered wetlands
+across the state, and leatherbacks visit its coastal waters. Two groups stand
+out as giants: the sea turtles, and the tortoises of oceanic islands such as
+the Galápagos and the Seychelles. How closely does body size track the turtle
+phylogeny? And did the giant island tortoises evolve their large size after
+arriving on islands, or were their ancestors already large? In this lab, we
+will use phylogenetic signal and ancestral state reconstruction to find out.
+
+The dataset for this lab comes from Jaffe et al. (2011), and includes a
+time-calibrated phylogeny of 226 turtle species (`turtle_tree.tre`, with branch
+lengths in millions of years) and the maximum carapace (upper shell) length of
+each species in centimeters (`turtle_body_size.csv`). Both files are in your
+assignment folder.
+
+Jaffe, A. L., Slater, G. J., & Alfaro, M. E. (2011). The evolution of island
+gigantism and body size variation in tortoises and turtles. *Biology Letters*,
+7(4), 558-561. https://doi.org/10.1098/rsbl.2010.1084
+
+## The phylogenetic variance-covariance matrix
+
+We'll start with a small subtree of five species from the full dataset: the
+bog turtle (*Glyptemys muhlenbergii*), wood turtle (*Glyptemys insculpta*),
+painted turtle (*Chrysemys picta*), snapping turtle (*Chelydra serpentina*),
+and leatherback sea turtle (*Dermochelys coriacea*). All five can be found in
+New York. To make calculations easier, the branch lengths of this subtree
+have been rounded to the nearest million years. Run the chunk to load the
+subtree, then plot it with its branch lengths labelled (`ape::edgelabels()`
+with `sub_tree$edge.length` is useful here):
+
+```{r}
+sub_tree <- read.tree(text = "((Chelydra_serpentina:82,((Glyptemys_muhlenbergii:10,Glyptemys_insculpta:10):24,Chrysemys_picta:34):48):9,Dermochelys_coriacea:91);")
+```
+
+In lecture, we discussed the phylogenetic variance-covariance matrix,
+$\mathbf{C}$, which contains the expected variance (on the diagonal) and
+covariance (off the diagonal) of trait values among species under Brownian
+motion, in units of time. Write out $\mathbf{C}$ for this subtree by hand
+below, ordering the rows and columns as bog turtle, wood turtle, painted
+turtle, snapping turtle, leatherback. Briefly explain where the values of one
+diagonal element and one off-diagonal element come from:
+
+```
+```
+
+Check your answer using `ape::vcv()`:
+
+```{r}
+```
+
+Pagel's $\lambda$ multiplies the off-diagonal elements of $\mathbf{C}$ by
+$\lambda$, leaving the diagonal elements unchanged. The function below does
+the equivalent operation on the tree itself, by multiplying every branch
+length by $\lambda$ and then lengthening the tip branches so that each species
+keeps the same total distance from the root. Run the chunk to define the
+function:
+
+```{r}
+lambda_tree <- function(tree, lambda) {
+  heights <- node.depth.edgelength(tree)   # distance of each node from the root
+  tips <- tree$edge[, 2] <= Ntip(tree)     # which branches lead to tips
+  new_lengths <- tree$edge.length * lambda
+  new_lengths[tips] <- new_lengths[tips] + (1 - lambda) * heights[tree$edge[tips, 2]]
+  tree$edge.length <- new_lengths
+  tree
+}
+```
+
+Without using any code, write out $\mathbf{C}$ for the subtree with
+$\lambda = 0.5$:
+
+```
+```
+
+Check your answer with `vcv(lambda_tree(sub_tree, 0.5))`. Then plot the
+subtree rescaled with $\lambda = 1$, $\lambda = 0.5$, and $\lambda = 0$ side
+by side (`par(mfrow = c(1, 3))`):
+
+```{r}
+```
+
+Describe how the shape of the tree changes as $\lambda$ decreases. What does
+$\mathbf{C}$ look like when $\lambda = 0$, and what would this imply about the
+body sizes of these five species? Why does it make sense that $\lambda$ leaves
+the diagonal of $\mathbf{C}$ unchanged?
+
+```
+```
+
+## Phylogenetic signal in turtle body size
+
+Load the full tree and body size data. Store the natural log of carapace
+length in a named vector called `log_size`, with names matching the tip labels
+and in the same order as `turtle_tree$tip.label`. Report the number of species
+and the age of the root, and plot histograms of the raw and log-transformed
+carapace lengths side by side:
+
+```{r}
+```
+
+Why do we log-transform body size before modelling its evolution with
+Brownian motion?
+
+```
+```
+
+Use `phytools::phylosig()` with `method = "lambda"` and `test = TRUE` to
+estimate Pagel's $\lambda$ for log body size. Report the estimate of
+$\lambda$, its log-likelihood, and the likelihood ratio test p-value against
+$\lambda = 0$ output from `phylosig()`:
+
+```{r}
+```
+
+To get a sense of what values of $\lambda$ to expect, the chunk below
+simulates two traits on the turtle tree: one evolving under Brownian motion
+along the tree, and one drawn independently for each species from a normal
+distribution with the same mean and standard deviation as log body size. Run
+the chunk, then estimate $\lambda$ for each simulated trait with `phylosig()`
+(note that `phylosig()` allows estimates of $\lambda$ to slightly exceed 1):
+
+```{r}
+set.seed(266)
+bm_trait <- fastBM(turtle_tree)
+random_trait <- setNames(rnorm(Ntip(turtle_tree), mean(turtle_data$log_size), 
+                                                  sd(turtle_data$log_size)),
+                         turtle_tree$tip.label)
+```
+
+```{r}
+```
+
+How do the estimates of $\lambda$ for the two simulated traits compare with
+each other and with turtle body size? Explain why each simulation produced
+the estimate that it did.
+
+```
+```
+
+Based on your results, why would it be a problem to test for a relationship
+between body size and habitat (e.g. freshwater vs. marine) using an ordinary
+linear regression across these 226 species?
+
+```
+```
+
+## Independent contrasts and the pruning algorithm
+
+Next, we'll return to the five-species subtree and calculate phylogenetic
+independent contrasts by hand. The chunk below contains the log carapace
+lengths of the five species, rounded to two decimal places. Run the chunk to
+load them:
+
+```{r}
+sub_size <- c(Glyptemys_muhlenbergii = 2.44, Glyptemys_insculpta = 3.14,
+              Chrysemys_picta = 3.22, Chelydra_serpentina = 3.85,
+              Dermochelys_coriacea = 5.50)
+```
+
+Following the steps of the pruning algorithm from lecture 21, calculate the
+first two standardized contrasts for the subtree by hand: first between the
+bog and wood turtles, and then between their ancestor and the painted turtle.
+For each contrast, report the two branch lengths used, the standardized
+contrast, the trait value assigned to the ancestral node, and the adjusted
+branch length leading to that node. To match the signs of the contrasts
+calculated by `ape`, subtract the second lineage from the first, in the order
+they appear in the Newick string. 
+
+```{r}
+```
+
+Use `ape::pic()` with `var.contrasts = TRUE` to calculate all four
+contrasts for the subtree, and check that the first two match your hand
+calculations. Note that pic() labels contrasts by node number, 
+starting with the root, so the contrasts you calculated by hand appear at the 
+bottom of the output. 
+
+```{r}
+```
+
+Repeat the contrast inference with `ape::pic()`, making three separate 
+modifications to the `sub_size` dataset: one where +1 is added to D. coriacea,
+one where +1 is added to C. serpentina, and one where +1 is added to G. insculpta.
+Which contrast values change as a result of these trait value modifications? 
+Why do some changes to the trait data affect more contrasts than others?
+
+```{r}
+```
+
+```
+```
+In lecture, we saw that the Brownian motion rate can be estimated from the
+contrasts as $\hat\sigma^2_{PIC}$, the sum of the squared standardized
+contrasts divided by the number of contrasts (one less than the number of
+species). Calculate $\hat\sigma^2_{PIC}$ for the subtree and store it as
+`sigma2_pic` (we will use this later).
+
+```{r}
+```
+
+## Ancestral state reconstruction of turtle body size
+
+`phytools::fastAnc()` does ancestral state reconstruction under maximum-likelihood
+by taking the most likely character state estimated at each node using the pruning
+algorithm. Let's reconstruct ancestral body sizes across the full turtle tree.
+Use `fastAnc()` with `CI = TRUE` to estimate the ancestral log body size at
+every node of both the full turtle phylogeny and the five-taxon subtree, 
+and `phytools::contMap()` to plot the reconstruction on the trees
+(`ftype = "off"` and `type = "fan"` will make the plot easier to read).
+Report the estimated carapace length of the common ancestor of all living
+turtles, and in the common ancestor of the five-taxon subtree, 
+and their 95% confidence intervals, in centimeters:
+
+```{r}
+```
+
+Why is the uncertainty in the reconstruction largest at the root?
+
+```
+```
+
+Use `ape::getMRCA()` to find the node that is the common ancestor of the five
+species in the subtree, and report its estimated carapace length from the
+full-tree reconstruction (the output of `fastAnc()` is named by node number,
+so `as.character()` will be useful). Why does it differ from your estimate
+using the subtree alone?
+
+```{r}
+```
+
+```
+```
+
+The Galápagos tortoises are the subspecies whose names begin with
+`Geochelone_nigra`, and the Seychelles giant tortoises belong to the genus
+*Dipsochelys*. In this tree, the closest mainland relative of the Galápagos
+tortoises is the Chaco tortoise (*Geochelone chilensis*) of South America, and
+the closest relative of the Seychelles tortoises is the radiated tortoise
+(*Geochelone radiata*) of Madagascar. Report the carapace lengths of these two
+relatives. Then report the reconstructed carapace length (in cm) of
+the common ancestor of: 1) the Galápagos tortoises; 2) the Galápagos tortoises
+and the Chaco tortoise; 3) the Seychelles tortoises; 4) the Seychelles
+tortoises and the radiated tortoise; and 5) the Galápagos and Seychelles
+tortoises:
+
+```{r}
+```
+
+Based on your reconstruction, did gigantism in island tortoises evolve once
+or more than once? Were the ancestors of each group of island tortoises
+already large when they diverged from their closest relatives, or did most
+of the increase in size happen afterwards? 
+
+```
+```
